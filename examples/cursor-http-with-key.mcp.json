@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "rill": {
+      "url": "http://localhost:3101/mcp",
+      "headers": {
+        "Authorization": "Bearer rill_vw_YOUR_KEY"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "rill": {
+      "command": "pnpm",
+      "args": ["--filter", "@rill/mcp", "dev"],
+      "env": {
+        "RILL_API_URL": "http://localhost:3001",
+        "RILL_VW_KEY": "rill_vw_YOUR_KEY"
+      }
+    }
+  }
+}

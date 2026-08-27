@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "rill": {
+      "url": "http://localhost:3101/mcp"
+    }
+  }
+}
