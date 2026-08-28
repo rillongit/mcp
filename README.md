@@ -53,7 +53,7 @@ See [`.env.example`](.env.example).
 | `rill_enable_payments` | Seller | Enable MPP/x402 on gate URLs |
 | `rill_webhooks` | Owner JWT | `payment.succeeded` unlocks your product (`create` \| `list`) |
 | `rill_create_seller` | Owner JWT | Create seller + `rill_sk_*` |
-| `rill_connect` | Seller | `action`: `status` \| `onboard` \| `sync` \| `login` |
+| `rill_connect` | Seller | `action`: `status` \| `onboard` \| `link` \| `oauth` \| `sync` \| `login` |
 | `rill_withdraw` | Seller | Transfer seller balance via Connect |
 | `rill_recycle` | Owner JWT | Seller balance → account wallet |
 | `rill_sync_directory` | Owner JWT | Refresh + probe MPP/x402 directory |

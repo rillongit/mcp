@@ -53,7 +53,7 @@ Envelope:
 
 ## Closed loop (Accept × Spend), hero
 1. Seller: rill_create_seller → rill_create_pay_link → rill_enable_payments → share gate_url → rill_webhooks payment.succeeded
-2. Buyer: rill_register_agent OR claim_handle → rill_fund → rill_create_wallet
+2. Buyer: rill_register_agent OR owner accounts/me → rill_fund → rill_create_wallet
 3. rill_pay_url { url: gate_url or capabilities.urls.seed_gate }
 4. Unlock = successful response body/headers (Rill gates return unlocked + receipt_id); webhook notifies seller backend
 5. rill_balance with vw_key to stay inside budget
@@ -83,7 +83,7 @@ Envelope:
 ## Connect Express payouts
 1. rill_create_seller → save rill_sk_*
 2. Enable payments; agent pays the gate; seller balance is credited
-3. rill_connect action=onboard (pass country) → human opens onboard_url (Stripe Express KYC)
+3. rill_connect action=onboard (pass country) → human opens onboard_url (Stripe Express KYC), or action=link for an existing Standard account
 4. Poll rill_connect action=sync until connect.payouts_enabled / onboarded
 5. If requirements remain: rill_connect action=login
 6. Auto Transfer when balance meets the minimum, or rill_withdraw with Idempotency-Key. Owner rill_recycle moves balance to the account wallet without Stripe.

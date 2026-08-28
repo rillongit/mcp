@@ -37,7 +37,7 @@ const TOOL_DESCRIPTIONS: Record<(typeof MCP_TOOL_NAMES)[number], string> = {
   rill_list_directory: "List MPP/x402 directory (defaults to spendable / payment_ready=1)",
   rill_discover: "Discover verified spendable pay URLs to spend",
   rill_register_agent: "PoW bootstrap → rill_vw_* (guest)",
-  rill_claim_handle: "Claim handle (owner JWT)",
+  rill_claim_handle: "Set org slug (owner JWT)",
   rill_accounts: "List owner accounts",
   rill_create_wallet: "Create rill_vw_* wallet with budget",
   rill_pay_url: "Pay any MPP/x402 URL (open world)",
@@ -50,7 +50,7 @@ const TOOL_DESCRIPTIONS: Record<(typeof MCP_TOOL_NAMES)[number], string> = {
   rill_enable_payments: "Enable MPP/x402 on seller gate URLs",
   rill_webhooks: "Register payment.succeeded to unlock your product",
   rill_create_seller: "Create seller (owner JWT)",
-  rill_connect: "Seller Connect; action status|onboard|sync|login",
+  rill_connect: "Seller Connect; action status|onboard|link|oauth|sync|login",
   rill_withdraw: "Transfer seller balance via Connect",
   rill_recycle: "Recycle seller balance to account wallet",
   rill_sync_directory: "Refresh + probe MPP/x402 directory catalog (owner)",
@@ -319,9 +319,9 @@ export function createRillMcpServer(
   if (allow("rill_claim_handle")) {
     server.tool(
       "rill_claim_handle",
-      "Claim a Rill handle and create the owner account wallet (owner JWT). Pass environment=test for Test mode.",
+      "Create the owner account wallet if needed, then set or change the org slug (owner JWT). Omit handle to keep the generated slug. Pass environment=test for Test mode.",
       {
-        handle: z.string().min(3),
+        handle: z.string().min(3).optional(),
         owner_jwt: z.string().optional(),
         environment: environmentArg,
       },
@@ -340,7 +340,11 @@ export function createRillMcpServer(
             path: "/handles/claim",
             ownerJwt: jwt,
             environment,
-            body: { handle: args.handle.trim().toLowerCase().replace(/^@/, "") },
+            body: {
+              handle: args.handle
+                ? args.handle.trim().toLowerCase().replace(/^@/, "")
+                : undefined,
+            },
           }),
         );
       },
@@ -836,16 +840,17 @@ export function createRillMcpServer(
   if (allow("rill_connect")) {
     server.tool(
       "rill_connect",
-      "Seller Stripe Express Connect. action=status: requirements/onboarded. action=onboard: Account Link URL for human KYC. action=sync: pull Stripe state. action=login: Express login for outstanding requirements.",
+      "Seller Stripe Connect. action=status: requirements/onboarded. action=onboard: Express Account Link. action=link: Standard OAuth URL. action=oauth: complete Standard link with code. action=sync: pull Stripe state. action=login: Express login or Stripe dashboard for Standard.",
       {
         action: z
-          .enum(["status", "onboard", "sync", "login"])
-          .describe("status | onboard | sync | login"),
+          .enum(["status", "onboard", "link", "oauth", "sync", "login"])
+          .describe("status | onboard | link | oauth | sync | login"),
         country: z
           .string()
           .length(2)
           .optional()
           .describe("onboard only: ISO-3166 alpha-2"),
+        code: z.string().optional().describe("oauth only: Stripe authorization code"),
         seller_key: z.string().optional(),
       },
       async (args) => {
@@ -869,6 +874,25 @@ export function createRillMcpServer(
               path: "/sellers/me/connect/onboard",
               sellerKey,
               body: args.country ? { country: args.country } : {},
+            }),
+          );
+        }
+        if (args.action === "link") {
+          return wrapToolResult(
+            await callRillApi({
+              method: "POST",
+              path: "/sellers/me/connect/link",
+              sellerKey,
+            }),
+          );
+        }
+        if (args.action === "oauth") {
+          return wrapToolResult(
+            await callRillApi({
+              method: "POST",
+              path: "/sellers/me/connect/oauth",
+              sellerKey,
+              body: { code: args.code },
             }),
           );
         }
