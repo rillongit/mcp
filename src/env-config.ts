@@ -18,7 +18,7 @@ export function getApiBaseUrl(): string {
   return (
     process.env.RILL_API_URL?.trim() ||
     process.env.API_URL?.trim() ||
-    "http://localhost:3001"
+    "https://api.userill.com"
   ).replace(/\/$/, "");
 }
 
@@ -112,12 +112,47 @@ export function mcpRateLimitRpm(): number {
 }
 
 export function mcpMaxBodyBytes(): number {
-  const n = Number(process.env.RILL_MCP_MAX_BODY_BYTES ?? `${1 * 1024 * 1024}`);
-  return Number.isFinite(n) && n > 0 ? n : 1 * 1024 * 1024;
+  const n = Number(process.env.RILL_MCP_MAX_BODY_BYTES ?? `${4 * 1024 * 1024}`);
+  return Number.isFinite(n) && n > 0 ? n : 4 * 1024 * 1024;
+}
+
+export function mcpTrustProxy(): boolean {
+  return process.env.RILL_MCP_TRUST_PROXY === "true";
+}
+
+/** Rightmost X-Forwarded-For hops trusted as proxies when trust proxy is on. */
+export function mcpTrustedProxyHops(): number {
+  const n = Number(process.env.RILL_MCP_TRUSTED_PROXY_HOPS ?? "1");
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
 
 export function mcpListenHost(): string {
   return process.env.RILL_MCP_HOST?.trim() || "0.0.0.0";
+}
+
+export function getMcpAllowedHosts(): string[] {
+  const raw = process.env.RILL_MCP_ALLOWED_HOSTS?.trim();
+  const hosts = raw
+    ? raw
+        .split(",")
+        .map((h) => h.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+  if (hosts.length > 0 && process.env.RAILWAY_ENVIRONMENT) {
+    hosts.push("healthcheck.railway.app");
+  }
+  const publicHost = (() => {
+    try {
+      const url = process.env.RILL_MCP_PUBLIC_URL?.trim();
+      return url ? new URL(url).host.toLowerCase() : "";
+    } catch {
+      return "";
+    }
+  })();
+  if (publicHost && hosts.length > 0) {
+    hosts.push(publicHost);
+  }
+  return [...new Set(hosts)];
 }
 
 export function getMcpReadinessChecks(): {

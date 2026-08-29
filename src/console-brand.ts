@@ -36,7 +36,7 @@ export function getMcpBrandText(): string {
     .map(({ label, url }) => `- ${label}  ${url}`)
     .join("\n");
   const auth =
-    "Auth: Authorization Bearer rill_vw_* / rill_sk_* / owner JWT.\nGuest tools: /mcp/guest";
+    "Auth: OAuth (Connect-with) or Authorization Bearer rill_oat_* / rill_vw_* / rill_sk_* / owner JWT.\nGuest tools: /mcp/guest";
   return `▲\n\n${BANNER}\n\n${getTagline()}\n\n${auth}\n\n${links}\n`;
 }
 
