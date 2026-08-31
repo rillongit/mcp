@@ -29,6 +29,8 @@ See [`.env.example`](.env.example).
 | `RILL_MCP_TRANSPORT` | `stdio` (default) or `http` |
 | `RILL_MCP_PORT` / `PORT` | HTTP port (default 3101) |
 | `RILL_MCP_REQUIRE_AUTH` | Require transport bearer in production |
+| `RILL_MERCHANT_OAUTH_ENABLED` | `true` to advertise `https://api.userill.com` as the authorization server |
+| `INTERNAL_API_KEY` | Shared with the API for `POST /oauth/introspect/mcp` |
 
 ## Tools
 
@@ -108,7 +110,7 @@ pnpm --filter @rill/mcp smoke:http
 
 ## Deploy
 
-Hosted HTTP: `https://mcp.userill.com/mcp`. Railway can build from the private monorepo (`apps/mcp/Dockerfile`, needs `@rill/shared`) or later from this repo once the image is standalone.
+Hosted HTTP: `https://mcp.userill.com/mcp`. Railway builds from the private monorepo using `deploy/mcp/Dockerfile` (clones this public repo at the SHA in `deploy/mcp/submodule.sha`, then builds `@rill/shared` + this package). `apps/mcp/Dockerfile` remains the local/submodule-checkout image.
 
 ## Monorepo
 
