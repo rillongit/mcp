@@ -50,11 +50,11 @@ See [`.env.example`](.env.example).
 | `rill_pay` | VW | Background ledger: resource pay or FQDN transfer |
 | `rill_balance` | Seller or VW | Balances + Connect flags / VW allowance |
 | `rill_fund` | VW or owner JWT | `action`: `checkout` \| `intent` \| `mock` (auto-registers on guest) |
-| `rill_resources` | Seller | `action`: `list` \| `create` |
+| `rill_resources` | Seller | `action`: `list` \| `create` \| `update` \| `deactivate` |
 | `rill_create_pay_link` | Seller | Create `gate_url` (agents pay); `pay_page_url` for humans |
 | `rill_enable_payments` | Seller | Enable MPP/x402 on gate URLs |
-| `rill_webhooks` | Owner JWT | `payment.succeeded` unlocks your product (`create` \| `list`) |
-| `rill_create_seller` | Owner JWT | Create seller + `rill_sk_*` |
+| `rill_webhooks` | Owner JWT | `payment.succeeded` unlocks your product (`create` \| `list` \| `test` \| `delete`) |
+| `rill_sellers` | Owner JWT / seller | `action`: `create` \| `list` \| `me` \| `update` \| `rotate`. Session adopts `rill_sk_*` on create/rotate |
 | `rill_connect` | Seller | `action`: `status` \| `onboard` \| `link` \| `oauth` \| `sync` \| `login` |
 | `rill_withdraw` | Seller | Transfer seller balance via Connect |
 | `rill_recycle` | Owner JWT | Seller balance → account wallet |
@@ -66,7 +66,7 @@ Guest HTTP (`/mcp/guest`): search, capabilities, resolve, list_directory, discov
 
 ## Hero loop (Accept × Spend)
 
-1. **Seller go-live:** `rill_create_seller` → `rill_create_pay_link` → `rill_enable_payments` → share `gate_url` → `rill_webhooks` `payment.succeeded`
+1. **Seller go-live:** `rill_sellers` list or create → `rill_create_pay_link` → `rill_enable_payments` → share `gate_url` → `rill_webhooks` `payment.succeeded`
 2. **Buyer (guest):** `rill_fund action=checkout` (auto-registers) → send `checkout_url` to a human → poll `action=intent` → `rill_pay_url`
 3. **Buyer (owner):** `claim_handle` → `rill_fund` → `rill_create_wallet` → `rill_pay_url`
 4. Optional reach: `rill_discover` (recent `payment_ready` only) → `rill_pay_url`
@@ -77,14 +77,14 @@ Guest HTTP (`/mcp/guest`): search, capabilities, resolve, list_directory, discov
 
 ## Accept go-live
 
-1. `rill_create_seller` → `rill_create_pay_link` → share `gate_url` (agents pay this; `pay_page_url` is the same SKU for humans)
+1. `rill_sellers` `action=list` (or `action=create`) → `rill_create_pay_link` → share `gate_url` (agents pay this; `pay_page_url` is the same SKU for humans)
 2. `rill_enable_payments`, enables MPP + x402 (optional `stripe_profile_id`; defaults adopt platform profile for the seller environment)
 3. `rill_webhooks` `action=create` for `payment.succeeded`, unlocks your product
 4. Test with a funded VW via `rill_pay_url` against `gate_url`
 
 ## Connect recipe
 
-1. `rill_create_seller` → save `rill_sk_*`
+1. `rill_sellers` `action=create` → save `rill_sk_*`
 2. Earn via resources / pays
 3. `rill_connect` `action=onboard` → human opens `onboard_url`
 4. Poll `rill_connect` `action=sync` until `connect.payouts_enabled`
