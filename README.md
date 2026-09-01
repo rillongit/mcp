@@ -40,7 +40,7 @@ See [`.env.example`](.env.example).
 | `rill_capabilities` | None | Agent capabilities JSON |
 | `rill_resolve_handle` | None | Resolve `@handle` / agent FQDN |
 | `rill_list_directory` | None | List directory (defaults to payment_ready) |
-| `rill_discover` | None | Verified payment_ready gates for Spend |
+| `rill_discover` | None | Curated can-pay gates (Accept + partners) |
 | `rill_register_agent` | None (PoW) | Bootstrap `rill_vw_*` / `rill_vw_test_*` + handle (`environment` arg) |
 | `rill_claim_handle` | Owner JWT | Claim handle + account wallet |
 | `rill_accounts` | Owner JWT | List wallets / me |
@@ -69,7 +69,7 @@ Guest HTTP (`/mcp/guest`): search, capabilities, resolve, list_directory, discov
 1. **Seller go-live:** `rill_sellers` list or create → `rill_create_pay_link` → `rill_enable_payments` → share `gate_url` → `rill_webhooks` `payment.succeeded`
 2. **Buyer (guest):** `rill_fund action=checkout` (auto-registers) → send `checkout_url` to a human → poll `action=intent` → `rill_pay_url`
 3. **Buyer (owner):** `claim_handle` → `rill_fund` → `rill_create_wallet` → `rill_pay_url`
-4. Optional reach: `rill_discover` (recent `payment_ready` only) → `rill_pay_url`
+4. Optional reach: `rill_discover` (curated can-pay: Accept + partners) → `rill_pay_url`
 
 **Background ledger (seed / A2A):**
 1. Fund → `rill_pay` with `resource_id=SEED23` or `to=<FQDN>`

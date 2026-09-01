@@ -35,7 +35,7 @@ const TOOL_DESCRIPTIONS: Record<(typeof MCP_TOOL_NAMES)[number], string> = {
   rill_capabilities: "Read agent capabilities",
   rill_resolve_handle: "Resolve @handle / agent FQDN",
   rill_list_directory: "List MPP/x402 directory (defaults to spendable / payment_ready=1)",
-  rill_discover: "Discover verified spendable pay URLs to spend",
+  rill_discover: "Discover curated can-pay gates (Accept + partners)",
   rill_register_agent: "PoW bootstrap → rill_vw_* (guest)",
   rill_claim_handle: "Set org slug (owner JWT)",
   rill_accounts: "List owner accounts",
@@ -209,7 +209,7 @@ export function createRillMcpServer(
   if (allow("rill_list_directory")) {
     server.tool(
       "rill_list_directory",
-      "List cached MPP/x402 pay URLs. Defaults to payment_ready=true (maps to spendable / Can pay). Pass payment_ready=false for the full research catalog. Prefer rill_discover for spend. Pass pay_url (and optional id as directory_id) to rill_pay_url.",
+      "List cached MPP/x402 pay URLs. Defaults to payment_ready=true (maps to spendable / Can pay), including the bazaar catalog. Pass payment_ready=false for the full research catalog. Prefer rill_discover for the curated can-pay set. Pass pay_url (and optional id as directory_id) to rill_pay_url. When body_hint is set, send that JSON shape with your own values.",
       {
         q: z.string().optional(),
         rail: z.enum(["mpp", "x402", "any"]).optional(),
@@ -256,7 +256,7 @@ export function createRillMcpServer(
   if (allow("rill_discover")) {
     server.tool(
       "rill_discover",
-      "Discover verified spendable MPP/x402 gates (always payment_ready=1 → spendable, Base by default). Prefer Accept seed_gate first. Rows include pay_url, probe_method, probe_amount_cents → rill_pay_url.",
+      "Discover curated can-pay MPP/x402 gates (source=rill,partner, payment_ready=1, Base by default). Prefer Accept seed_gate first. Rows include pay_url, probe_method, probe_amount_cents, optional body_hint → rill_pay_url.",
       {
         q: z.string().optional(),
         rail: z.enum(["mpp", "x402", "any"]).optional(),
@@ -273,6 +273,7 @@ export function createRillMcpServer(
           "max_probe_age_hours",
           String(args.max_probe_age_hours ?? 168),
         );
+        params.set("source", "rill,partner");
         if (args.q?.trim()) params.set("q", args.q.trim());
         if (args.rail) params.set("rail", args.rail);
         if (args.limit) params.set("limit", String(args.limit));

@@ -61,8 +61,9 @@ Envelope:
 ## Cold-start spend (MCP)
 1. Fund VW as above
 2. Prefer known Accept gate before browsing catalogs
-3. Else rill_discover (payment_ready only; skip stale) → rill_pay_url
-4. Do not pass marketing/docs URLs
+3. Else rill_discover (curated can-pay: rill + partner, skip stale) → rill_pay_url
+4. When body_hint is set, pass body with your own values
+5. Do not pass marketing/docs URLs
 
 ## Background ledger (seed / in-Rill A2A)
 1. Funded VW → rill_pay { resource_id: "SEED23" } OR { to: "research.acme.userill.com", amount }
@@ -77,7 +78,7 @@ Envelope:
 
 ## Discover
 1. rill_capabilities (seed_gate, happy_paths.closed_loop, directory_catalog)
-2. Prefer Accept gates; else rill_discover
+2. Prefer Accept gates; else rill_discover (curated can-pay)
 3. rill_resolve_handle with @handle, handle.userill.com, or agent.handle.userill.com
 
 ## Connect Express payouts
