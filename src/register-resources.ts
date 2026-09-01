@@ -52,7 +52,7 @@ Envelope:
   recipes: `# Recipes
 
 ## Closed loop (Accept × Spend), hero
-1. Seller: rill_create_seller → rill_create_pay_link → rill_enable_payments → share gate_url → rill_webhooks payment.succeeded
+1. Seller: rill_sellers list (or create) → rill_create_pay_link → rill_enable_payments → share gate_url → rill_webhooks payment.succeeded
 2. Buyer: rill_register_agent OR owner accounts/me → rill_fund → rill_create_wallet
 3. rill_pay_url { url: gate_url or capabilities.urls.seed_gate }
 4. Unlock = successful response body/headers (Rill gates return unlocked + receipt_id); webhook notifies seller backend
@@ -69,7 +69,7 @@ Envelope:
 2. rill_verify_receipt; unlock seed with GET /demo/echo + X-Rill-Receipt
 
 ## Accept go-live (gate URL + webhook)
-1. rill_create_seller → rill_create_pay_link → share gate_url (agents pay this; pay_page_url is the same SKU for humans)
+1. rill_sellers action=list (or action=create) → rill_create_pay_link → share gate_url (agents pay this; pay_page_url is the same SKU for humans)
 2. rill_enable_payments (required for open-rail 402)
 3. rill_webhooks action=create for payment.succeeded, unlocks your product
 4. Test: agent rill_pay_url against gate_url
@@ -81,7 +81,7 @@ Envelope:
 3. rill_resolve_handle with @handle, handle.userill.com, or agent.handle.userill.com
 
 ## Connect Express payouts
-1. rill_create_seller → save rill_sk_*
+1. rill_sellers action=create → save rill_sk_*
 2. Enable payments; agent pays the gate; seller balance is credited
 3. rill_connect action=onboard (pass country) → human opens onboard_url (Stripe Express KYC), or action=link for an existing Standard account
 4. Poll rill_connect action=sync until connect.payouts_enabled / onboarded

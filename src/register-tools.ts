@@ -45,11 +45,11 @@ const TOOL_DESCRIPTIONS: Record<(typeof MCP_TOOL_NAMES)[number], string> = {
   rill_balance: "Seller balance or wallet status",
   rill_verify_receipt: "Verify receipt",
   rill_fund: "Fund wallet; action checkout|intent|mock",
-  rill_resources: "Seller resources; action list|create",
+  rill_resources: "Seller resources; action list|create|update|deactivate",
   rill_create_pay_link: "Create gate URL for Accept (agents pay this)",
   rill_enable_payments: "Enable MPP/x402 on seller gate URLs",
-  rill_webhooks: "Register payment.succeeded to unlock your product",
-  rill_create_seller: "Create seller (owner JWT)",
+  rill_webhooks: "Owner webhooks; action create|list|test|delete",
+  rill_sellers: "Accept sellers; action create|list|me|update|rotate",
   rill_connect: "Seller Connect; action status|onboard|link|oauth|sync|login",
   rill_withdraw: "Transfer seller balance via Connect",
   rill_recycle: "Recycle seller balance to account wallet",
@@ -747,23 +747,30 @@ export function createRillMcpServer(
   if (allow("rill_resources")) {
     server.tool(
       "rill_resources",
-      "Seller priced resources. action=list: inventory. action=create: raw SKU (prefer rill_create_pay_link for hosted Accept).",
+      "Seller priced resources. action=list: inventory. action=create: raw SKU (prefer rill_create_pay_link for hosted Accept). action=update: price/path. action=deactivate: set active=false.",
       {
-        action: z.enum(["list", "create"]).describe("list | create"),
+        action: z
+          .enum(["list", "create", "update", "deactivate"])
+          .describe("list | create | update | deactivate"),
+        resource_id: z
+          .string()
+          .optional()
+          .describe("update/deactivate: resource id"),
         path_or_tool: z
           .string()
           .optional()
-          .describe("create only: path or tool name"),
+          .describe("create/update: path or tool name"),
         amount: z
           .number()
           .positive()
           .optional()
-          .describe("create only: USD price"),
+          .describe("create/update: USD price"),
         resource_type: z
           .enum(["http", "mcp"])
           .optional()
           .describe("create only: defaults to http"),
         seller_key: z.string().optional(),
+        idempotency_key: z.string().optional(),
       },
       async (args) => {
         const sellerKey = resolveSellerKey(session, args.seller_key);
@@ -779,38 +786,119 @@ export function createRillMcpServer(
             }),
           );
         }
-        if (!args.path_or_tool?.trim() || !args.amount) {
+        if (args.action === "create") {
+          if (!args.path_or_tool?.trim() || !args.amount) {
+            return missingKeyResult(
+              "invalid_request",
+              "path_or_tool and amount required for action=create",
+            );
+          }
+          return wrapToolResult(
+            await callRillApi({
+              method: "POST",
+              path: "/resources",
+              sellerKey,
+              body: {
+                path_or_tool: args.path_or_tool,
+                amount: args.amount,
+                resource_type: args.resource_type ?? "http",
+              },
+            }),
+          );
+        }
+        const resourceId = args.resource_id?.trim();
+        if (!resourceId) {
           return missingKeyResult(
             "invalid_request",
-            "path_or_tool and amount required for action=create",
+            "resource_id required for action=update and action=deactivate",
+          );
+        }
+        if (args.action === "deactivate") {
+          return wrapToolResult(
+            await callRillApi({
+              method: "PATCH",
+              path: `/resources/${encodeURIComponent(resourceId)}`,
+              sellerKey,
+              idempotencyKey: idempotencyOrNew(args.idempotency_key),
+              body: { active: false },
+            }),
+          );
+        }
+        const body: Record<string, unknown> = {};
+        if (args.path_or_tool?.trim()) body.path_or_tool = args.path_or_tool.trim();
+        if (args.amount) body.amount = args.amount;
+        if (Object.keys(body).length === 0) {
+          return missingKeyResult(
+            "invalid_request",
+            "path_or_tool or amount required for action=update",
           );
         }
         return wrapToolResult(
           await callRillApi({
-            method: "POST",
-            path: "/resources",
+            method: "PATCH",
+            path: `/resources/${encodeURIComponent(resourceId)}`,
             sellerKey,
-            body: {
-              path_or_tool: args.path_or_tool,
-              amount: args.amount,
-              resource_type: args.resource_type ?? "http",
-            },
+            idempotencyKey: idempotencyOrNew(args.idempotency_key),
+            body,
           }),
         );
       },
     );
   }
 
-  if (allow("rill_create_seller")) {
+  if (allow("rill_sellers")) {
     server.tool(
-      "rill_create_seller",
-      "Create an Accept seller and return rill_sk_* or rill_sk_test_* (owner JWT). Pass environment=test for Test mode.",
+      "rill_sellers",
+      "Accept sellers. action=list: owner inventory. action=create: mint rill_sk_* (shown once). action=me: current seller. action=update: website/description. action=rotate: new key (shown once). List before create after Authenticate.",
       {
-        name: z.string().min(1),
+        action: z
+          .enum(["create", "list", "me", "update", "rotate"])
+          .describe("create | list | me | update | rotate"),
+        name: z.string().min(1).optional().describe("create only: display name"),
+        website_url: z
+          .string()
+          .optional()
+          .describe("create/update: https company website"),
+        description: z
+          .string()
+          .optional()
+          .describe("create/update: short listing copy"),
+        seller_id: z
+          .string()
+          .optional()
+          .describe("rotate only: seller id from action=list"),
         owner_jwt: z.string().optional(),
+        seller_key: z.string().optional(),
         environment: environmentArg,
       },
       async (args) => {
+        const environment = resolveEnvironment(session, args.environment);
+        if (args.action === "me" || args.action === "update") {
+          const sellerKey = resolveSellerKey(session, args.seller_key);
+          if (!sellerKey) {
+            return missingKeyResult("missing_seller_key", "rill_sk_* required");
+          }
+          if (args.action === "me") {
+            return wrapToolResult(
+              await callRillApi({
+                method: "GET",
+                path: "/sellers/me",
+                sellerKey,
+              }),
+            );
+          }
+          return wrapToolResult(
+            await callRillApi({
+              method: "PATCH",
+              path: "/sellers/me",
+              sellerKey,
+              body: {
+                website_url: args.website_url,
+                description: args.description,
+              },
+            }),
+          );
+        }
         const jwt = resolveOwnerJwt(session, args.owner_jwt);
         if (!jwt) {
           return missingKeyResult(
@@ -818,13 +906,54 @@ export function createRillMcpServer(
             "RILL_OWNER_JWT or owner_jwt required",
           );
         }
-        const environment = resolveEnvironment(session, args.environment);
+        if (args.action === "list") {
+          return wrapToolResult(
+            await callRillApi({
+              method: "GET",
+              path: "/sellers",
+              ownerJwt: jwt,
+              environment,
+            }),
+          );
+        }
+        if (args.action === "rotate") {
+          const sellerId = args.seller_id?.trim();
+          if (!sellerId) {
+            return missingKeyResult(
+              "invalid_request",
+              "seller_id required for action=rotate",
+            );
+          }
+          const result = await callRillApi({
+            method: "POST",
+            path: `/sellers/${encodeURIComponent(sellerId)}/rotate-key`,
+            ownerJwt: jwt,
+            environment,
+          });
+          const body = result.body as {
+            seller?: { api_key?: string };
+          } | null;
+          if (body?.seller?.api_key) {
+            session.setSellerKey?.(body.seller.api_key);
+          }
+          return wrapToolResult(result);
+        }
+        if (!args.name?.trim()) {
+          return missingKeyResult(
+            "invalid_request",
+            "name required for action=create",
+          );
+        }
         const result = await callRillApi({
           method: "POST",
           path: "/sellers",
           ownerJwt: jwt,
           environment,
-          body: { name: args.name },
+          body: {
+            name: args.name,
+            website_url: args.website_url,
+            description: args.description,
+          },
         });
         const body = result.body as {
           seller?: { api_key?: string };
@@ -1148,10 +1277,16 @@ export function createRillMcpServer(
   if (allow("rill_webhooks")) {
     server.tool(
       "rill_webhooks",
-      "Owner webhooks. action=create: register HTTPS URL for payment.succeeded (unlocks your product). action=list: list endpoints. Pass environment=test for Test mode.",
+      "Owner webhooks. action=create: register HTTPS URL for payment.succeeded. action=list: endpoints. action=test: send a test event. action=delete: remove endpoint. Pass environment=test for Test mode.",
       {
-        action: z.enum(["create", "list"]).describe("create | list"),
+        action: z
+          .enum(["create", "list", "test", "delete"])
+          .describe("create | list | test | delete"),
         url: z.string().url().optional().describe("create only: HTTPS callback"),
+        webhook_id: z
+          .string()
+          .optional()
+          .describe("test/delete: webhook id from action=list"),
         events: z
           .array(z.string())
           .optional()
@@ -1173,6 +1308,26 @@ export function createRillMcpServer(
             await callRillApi({
               method: "GET",
               path: "/webhooks",
+              ownerJwt: jwt,
+              environment,
+            }),
+          );
+        }
+        if (args.action === "test" || args.action === "delete") {
+          const webhookId = args.webhook_id?.trim();
+          if (!webhookId) {
+            return missingKeyResult(
+              "invalid_request",
+              "webhook_id required for action=test and action=delete",
+            );
+          }
+          return wrapToolResult(
+            await callRillApi({
+              method: args.action === "delete" ? "DELETE" : "POST",
+              path:
+                args.action === "delete"
+                  ? `/webhooks/${encodeURIComponent(webhookId)}`
+                  : `/webhooks/${encodeURIComponent(webhookId)}/test`,
               ownerJwt: jwt,
               environment,
             }),
