@@ -35,12 +35,16 @@ Same key + different body → 409 idempotency_conflict.
 POST /webhooks with https URL (localhost allowed outside production).
 
 Headers on delivery:
-- X-Rill-Webhook-Id
-- X-Rill-Timestamp
-- X-Rill-Signature (v1,<hex hmac of eventId.timestamp.rawBody>)
+- X-Rill-Webhook-Id (matches envelope id)
+- X-Rill-Timestamp (unix seconds)
+- X-Rill-Signature (v1,<hex HMAC-SHA256 of eventId.timestamp.rawBody>)
 
-Verify timestamp within 300s. Deliveries retry with backoff; use POST …/test and …/deliveries/:id/retry.
-Events include payment.succeeded, transfer.received, funding.paid, withdrawal.paid, vw.revoked, resource.updated, …
+Signed string: {X-Rill-Webhook-Id}.{X-Rill-Timestamp}.{raw body bytes}.
+Verify the raw body; do not re-serialize JSON. Reject timestamps outside 300s.
+Envelope: { id, type, created_at, data }.
+Node helper: verifyWebhookSignature from @userill/accept.
+Deliveries retry with backoff; use POST …/test and …/deliveries/:id/retry.
+Events include payment.succeeded, transfer.received, funding.paid, withdrawal.paid, vw.revoked, resource.updated, subscription.created, subscription.renewed, subscription.lapsed, subscription.cancelled, …
 `,
   errors: `# Errors
 

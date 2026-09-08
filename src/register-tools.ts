@@ -770,6 +770,10 @@ export function createRillMcpServer(
           .enum(["http", "mcp"])
           .optional()
           .describe("create only: defaults to http"),
+        billing_interval: z
+          .enum(["once", "month", "year"])
+          .optional()
+          .describe("create/update: once (default), month, or year"),
         seller_key: z.string().optional(),
         idempotency_key: z.string().optional(),
       },
@@ -803,6 +807,7 @@ export function createRillMcpServer(
                 path_or_tool: args.path_or_tool,
                 amount: args.amount,
                 resource_type: args.resource_type ?? "http",
+                billing_interval: args.billing_interval,
               },
             }),
           );
@@ -828,6 +833,7 @@ export function createRillMcpServer(
         const body: Record<string, unknown> = {};
         if (args.path_or_tool?.trim()) body.path_or_tool = args.path_or_tool.trim();
         if (args.amount) body.amount = args.amount;
+        if (args.billing_interval) body.billing_interval = args.billing_interval;
         if (Object.keys(body).length === 0) {
           return missingKeyResult(
             "invalid_request",
@@ -1116,6 +1122,7 @@ export function createRillMcpServer(
         amount: z.number().positive().optional(),
         resource_id: z.string().optional(),
         resource_type: z.enum(["http", "mcp"]).optional(),
+        billing_interval: z.enum(["once", "month", "year"]).optional(),
         seller_key: z.string().optional(),
       },
       async (args) => {
@@ -1142,6 +1149,7 @@ export function createRillMcpServer(
               path_or_tool: args.path_or_tool,
               amount,
               resource_type: args.resource_type ?? "http",
+              billing_interval: args.billing_interval,
             },
           });
           if (!created.ok) return wrapToolResult(created);
