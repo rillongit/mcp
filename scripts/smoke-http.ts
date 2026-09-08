@@ -6,7 +6,10 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-const mcpRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const mcpRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const port = 3199;
 const child = spawn("npx", ["tsx", "src/http-entry.ts"], {
   cwd: mcpRoot,

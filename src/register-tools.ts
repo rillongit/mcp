@@ -34,7 +34,8 @@ const TOOL_DESCRIPTIONS: Record<(typeof MCP_TOOL_NAMES)[number], string> = {
   rill_search_tools: "Search Rill MCP tools",
   rill_capabilities: "Read agent capabilities",
   rill_resolve_handle: "Resolve @handle / agent FQDN",
-  rill_list_directory: "List MPP/x402 directory (defaults to spendable / payment_ready=1)",
+  rill_list_directory:
+    "List MPP/x402 directory (defaults to spendable / payment_ready=1)",
   rill_discover: "Discover curated can-pay gates (Accept + partners)",
   rill_register_agent: "PoW bootstrap → rill_vw_* (guest)",
   rill_claim_handle: "Set org slug (owner JWT)",
@@ -116,7 +117,6 @@ function resolveEnvironment(
 }
 
 const environmentArg = z.enum(["live", "test"]).optional();
-
 
 function idempotencyOrNew(key?: string): string {
   return key?.trim() || randomUUID();
@@ -442,7 +442,9 @@ export function createRillMcpServer(
         max_amount_cents: z.number().int().positive().optional(),
         prefer_rail: z.enum(["auto", "mpp", "x402"]).optional(),
         headers: z.record(z.string(), z.string()).optional(),
-        body: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+        body: z
+          .union([z.string(), z.record(z.string(), z.unknown())])
+          .optional(),
         idempotency_key: z.string().optional(),
         vw_key: z.string().optional(),
       },
@@ -590,7 +592,9 @@ export function createRillMcpServer(
         account_wallet_id: z
           .string()
           .optional()
-          .describe("Owner path: wallet to fund. VW path: optional (uses the VW account wallet)."),
+          .describe(
+            "Owner path: wallet to fund. VW path: optional (uses the VW account wallet).",
+          ),
         amount: z
           .number()
           .positive()
@@ -624,7 +628,11 @@ export function createRillMcpServer(
             args.label,
             environment,
           );
-          if (!registered.ok || !registered.body || typeof registered.body !== "object") {
+          if (
+            !registered.ok ||
+            !registered.body ||
+            typeof registered.body !== "object"
+          ) {
             return wrapToolResult(registered);
           }
           const body = registered.body as {
@@ -831,9 +839,11 @@ export function createRillMcpServer(
           );
         }
         const body: Record<string, unknown> = {};
-        if (args.path_or_tool?.trim()) body.path_or_tool = args.path_or_tool.trim();
+        if (args.path_or_tool?.trim())
+          body.path_or_tool = args.path_or_tool.trim();
         if (args.amount) body.amount = args.amount;
-        if (args.billing_interval) body.billing_interval = args.billing_interval;
+        if (args.billing_interval)
+          body.billing_interval = args.billing_interval;
         if (Object.keys(body).length === 0) {
           return missingKeyResult(
             "invalid_request",
@@ -861,7 +871,11 @@ export function createRillMcpServer(
         action: z
           .enum(["create", "list", "me", "update", "rotate"])
           .describe("create | list | me | update | rotate"),
-        name: z.string().min(1).optional().describe("create only: display name"),
+        name: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("create only: display name"),
         website_url: z
           .string()
           .optional()
@@ -986,7 +1000,10 @@ export function createRillMcpServer(
           .length(2)
           .optional()
           .describe("onboard only: ISO-3166 alpha-2"),
-        code: z.string().optional().describe("oauth only: Stripe authorization code"),
+        code: z
+          .string()
+          .optional()
+          .describe("oauth only: Stripe authorization code"),
         seller_key: z.string().optional(),
       },
       async (args) => {
@@ -1169,11 +1186,15 @@ export function createRillMcpServer(
           const amt = body?.resource?.amount ?? body?.amount ?? amount;
           amount = typeof amt === "string" ? Number(amt) : amt;
           if (!resourceId) {
-            return missingKeyResult("create_failed", "Resource create missing id");
+            return missingKeyResult(
+              "create_failed",
+              "Resource create missing id",
+            );
           }
           const publicCode = shortId ?? resourceId;
           const gateUrl = body?.resource?.gate_url ?? `${api}/r/${publicCode}`;
-          const payPageUrl = body?.resource?.pay_url ?? `${app}/r/${publicCode}`;
+          const payPageUrl =
+            body?.resource?.pay_url ?? `${app}/r/${publicCode}`;
           const baliseHtml = `<script src="${app}/rill-balise.js" data-resource-id="${publicCode}" data-api-base="${api}" async></script>`;
           return {
             content: [
@@ -1291,7 +1312,11 @@ export function createRillMcpServer(
         action: z
           .enum(["create", "list", "test", "delete"])
           .describe("create | list | test | delete"),
-        url: z.string().url().optional().describe("create only: HTTPS callback"),
+        url: z
+          .string()
+          .url()
+          .optional()
+          .describe("create only: HTTPS callback"),
         webhook_id: z
           .string()
           .optional()

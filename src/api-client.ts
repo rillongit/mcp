@@ -82,7 +82,8 @@ export async function callRillApi(
         ok: false,
         error: {
           code: "network_error",
-          message: err instanceof Error ? err.message : "Network request failed",
+          message:
+            err instanceof Error ? err.message : "Network request failed",
         },
       },
     };

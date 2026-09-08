@@ -43,7 +43,9 @@ import { McpSessionRegistry } from "./session-registry.js";
 
 function extractKey(header: string | undefined, prefix: string): string | null {
   if (!header) return null;
-  const raw = header.startsWith("Bearer ") ? header.slice(7).trim() : header.trim();
+  const raw = header.startsWith("Bearer ")
+    ? header.slice(7).trim()
+    : header.trim();
   return raw.startsWith(prefix) ? raw : null;
 }
 
@@ -60,7 +62,9 @@ function firstHeader(value: string | string[] | undefined): string | undefined {
 /** Owner Supabase JWT (eyJ…) or OAuth access token (rill_oat_*), not VW/seller keys. */
 function extractOwnerJwt(header: string | undefined): string | null {
   if (!header) return null;
-  const raw = header.startsWith("Bearer ") ? header.slice(7).trim() : header.trim();
+  const raw = header.startsWith("Bearer ")
+    ? header.slice(7).trim()
+    : header.trim();
   if (!raw || raw.startsWith("rill_vw_") || raw.startsWith("rill_sk_")) {
     return null;
   }
@@ -296,11 +300,7 @@ async function mcpAuthMiddleware(
   const tokens = getMcpHttpBearerTokens();
   const presented = extractPresentedCredential(req);
 
-  if (
-    presented &&
-    tokens.length > 0 &&
-    bearerMatches(presented, tokens)
-  ) {
+  if (presented && tokens.length > 0 && bearerMatches(presented, tokens)) {
     next();
     return;
   }
@@ -476,7 +476,10 @@ export function createHttpApplication(): Express {
             error: {
               code: -32000,
               message: "Too many MCP sessions",
-              data: { code: "too_many_sessions", message: "Too many MCP sessions" },
+              data: {
+                code: "too_many_sessions",
+                message: "Too many MCP sessions",
+              },
             },
             id: null,
           });
@@ -559,7 +562,12 @@ export function createHttpApplication(): Express {
   const handleGuestMcp = (req: Request, res: Response) =>
     void handleMcp(req, res, "guest");
 
-  app.post("/mcp", rateLimitMiddleware, mcpAuthMiddleware, handleAuthenticatedMcp);
+  app.post(
+    "/mcp",
+    rateLimitMiddleware,
+    mcpAuthMiddleware,
+    handleAuthenticatedMcp,
+  );
   app.get(
     "/mcp",
     rateLimitMiddleware,

@@ -1,7 +1,10 @@
 /**
  * Unit-style checks for env-config bearer parsing (no network).
  */
-import { parseBearerCsvTokens, getMcpReadinessChecks } from "../src/env-config.js";
+import {
+  parseBearerCsvTokens,
+  getMcpReadinessChecks,
+} from "../src/env-config.js";
 import { buildProtectedResourceMetadata } from "../src/oauth-metadata.js";
 
 function assert(condition: boolean, message: string): void {

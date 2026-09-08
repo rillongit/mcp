@@ -7,7 +7,9 @@ export function parseBearerCsvTokens(raw: string | undefined): string[] {
   const seen = new Set<string>();
   for (const token of tokens) {
     if (seen.has(token)) {
-      throw new Error("RILL_MCP_BEARER_TOKEN contains duplicate token segments");
+      throw new Error(
+        "RILL_MCP_BEARER_TOKEN contains duplicate token segments",
+      );
     }
     seen.add(token);
   }
@@ -33,9 +35,7 @@ export function getAppBaseUrl(): string {
 
 export function getOptionalVwKey(): string | null {
   return (
-    process.env.RILL_VW_KEY?.trim() ||
-    process.env.RILL_API_KEY?.trim() ||
-    null
+    process.env.RILL_VW_KEY?.trim() || process.env.RILL_API_KEY?.trim() || null
   );
 }
 

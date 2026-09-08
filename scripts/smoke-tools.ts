@@ -1,17 +1,17 @@
 /**
  * Assert MCP catalog hard-cut: 23 live tools, no retired names registered.
  */
-import {
-  MCP_TOOL_NAMES,
-  RETIRED_MCP_TOOL_NAMES,
-} from "@rill/shared";
+import { MCP_TOOL_NAMES, RETIRED_MCP_TOOL_NAMES } from "@rill/shared";
 import { TOOL_CATALOG } from "../src/register-tools.js";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
 }
 
-assert(MCP_TOOL_NAMES.length === 23, `expected 23 tools, got ${MCP_TOOL_NAMES.length}`);
+assert(
+  MCP_TOOL_NAMES.length === 23,
+  `expected 23 tools, got ${MCP_TOOL_NAMES.length}`,
+);
 assert(
   TOOL_CATALOG.length === MCP_TOOL_NAMES.length,
   "TOOL_CATALOG length must match MCP_TOOL_NAMES",

@@ -1,8 +1,5 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  createRillMcpServer,
-  createSessionFromEnv,
-} from "./register-tools.js";
+import { createRillMcpServer, createSessionFromEnv } from "./register-tools.js";
 
 export async function startStdioServer(): Promise<void> {
   const session = createSessionFromEnv();

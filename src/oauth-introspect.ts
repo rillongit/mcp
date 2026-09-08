@@ -23,7 +23,9 @@ const cache = new Map<string, CacheEntry>();
 
 function internalApiKey(): string | null {
   return (
-    process.env.INTERNAL_API_KEY?.trim() || process.env.CRON_SECRET?.trim() || null
+    process.env.INTERNAL_API_KEY?.trim() ||
+    process.env.CRON_SECRET?.trim() ||
+    null
   );
 }
 
@@ -64,7 +66,10 @@ export async function introspectOAuthAccessToken(
     return body;
   }
 
-  const ttl = Math.min(CACHE_TTL_MS, Math.max(5_000, body.exp * 1000 - Date.now()));
+  const ttl = Math.min(
+    CACHE_TTL_MS,
+    Math.max(5_000, body.exp * 1000 - Date.now()),
+  );
   cache.set(token, { expiresAt: Date.now() + ttl, value: body });
   return body;
 }

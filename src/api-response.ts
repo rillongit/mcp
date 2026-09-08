@@ -142,7 +142,11 @@ export function fundingIntentLines(body: unknown): string[] | null {
       "Wallet is funded, mint a VW with rill_create_wallet, then rill_pay_url.",
     ];
   }
-  if (status === "pending" || status === "open" || status === "requires_payment") {
+  if (
+    status === "pending" ||
+    status === "open" ||
+    status === "requires_payment"
+  ) {
     return [
       `Funding intent status: ${status}`,
       "Human still needs to complete Checkout. Re-poll rill_fund action=intent shortly.",

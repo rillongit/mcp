@@ -43,7 +43,11 @@ export async function registerBootstrapAgent(
       method: "POST",
       path: "/agent/register/challenge",
     });
-    if (!challenge.ok || !challenge.body || typeof challenge.body !== "object") {
+    if (
+      !challenge.ok ||
+      !challenge.body ||
+      typeof challenge.body !== "object"
+    ) {
       last = challenge;
       if (challenge.status === 429) return challenge;
       continue;
