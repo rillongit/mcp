@@ -782,6 +782,22 @@ export function createRillMcpServer(
           .enum(["once", "month", "year"])
           .optional()
           .describe("create/update: once (default), month, or year"),
+        sku_kind: z
+          .enum(["one_shot", "credit_topup"])
+          .optional()
+          .describe(
+            "one_shot (default) unlocks one call; credit_topup adds `credits` of `credit_unit` to the buyer on your side (echoed in payment.succeeded metadata)",
+          ),
+        credits: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe("credit_topup: credits granted per payment"),
+        credit_unit: z
+          .string()
+          .optional()
+          .describe("credit_topup: unit label, e.g. api_calls or tokens"),
         seller_key: z.string().optional(),
         idempotency_key: z.string().optional(),
       },
@@ -816,6 +832,9 @@ export function createRillMcpServer(
                 amount: args.amount,
                 resource_type: args.resource_type ?? "http",
                 billing_interval: args.billing_interval,
+                sku_kind: args.sku_kind,
+                credits: args.credits,
+                credit_unit: args.credit_unit,
               },
             }),
           );
@@ -844,10 +863,13 @@ export function createRillMcpServer(
         if (args.amount) body.amount = args.amount;
         if (args.billing_interval)
           body.billing_interval = args.billing_interval;
+        if (args.sku_kind) body.sku_kind = args.sku_kind;
+        if (args.credits !== undefined) body.credits = args.credits;
+        if (args.credit_unit) body.credit_unit = args.credit_unit;
         if (Object.keys(body).length === 0) {
           return missingKeyResult(
             "invalid_request",
-            "path_or_tool or amount required for action=update",
+            "path_or_tool, amount, or sku fields required for action=update",
           );
         }
         return wrapToolResult(
@@ -1140,6 +1162,22 @@ export function createRillMcpServer(
         resource_id: z.string().optional(),
         resource_type: z.enum(["http", "mcp"]).optional(),
         billing_interval: z.enum(["once", "month", "year"]).optional(),
+        sku_kind: z
+          .enum(["one_shot", "credit_topup"])
+          .optional()
+          .describe(
+            "one_shot (default) unlocks one call; credit_topup adds `credits` of `credit_unit` to the buyer on your side (echoed in payment.succeeded metadata)",
+          ),
+        credits: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe("credit_topup: credits granted per payment"),
+        credit_unit: z
+          .string()
+          .optional()
+          .describe("credit_topup: unit label, e.g. api_calls or tokens"),
         seller_key: z.string().optional(),
       },
       async (args) => {
@@ -1167,6 +1205,9 @@ export function createRillMcpServer(
               amount,
               resource_type: args.resource_type ?? "http",
               billing_interval: args.billing_interval,
+              sku_kind: args.sku_kind,
+              credits: args.credits,
+              credit_unit: args.credit_unit,
             },
           });
           if (!created.ok) return wrapToolResult(created);
