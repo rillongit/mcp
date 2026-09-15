@@ -4,12 +4,43 @@
 import {
   parseBearerCsvTokens,
   getMcpReadinessChecks,
+  defaultAppBaseUrl,
+  getAppBaseUrl,
 } from "../src/env-config.js";
 import { buildProtectedResourceMetadata } from "../src/oauth-metadata.js";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
 }
+
+assert(
+  defaultAppBaseUrl("https://api.userill.com") === "https://userill.com",
+  "prod API infers prod app origin",
+);
+assert(
+  defaultAppBaseUrl("http://localhost:3001") === "http://localhost:3000",
+  "local API keeps local app origin",
+);
+const prevApp = process.env.RILL_APP_URL;
+const prevApp2 = process.env.APP_URL;
+const prevApp3 = process.env.NEXT_PUBLIC_APP_URL;
+const prevApi = process.env.RILL_API_URL;
+delete process.env.RILL_APP_URL;
+delete process.env.APP_URL;
+delete process.env.NEXT_PUBLIC_APP_URL;
+process.env.RILL_API_URL = "https://api.userill.com";
+assert(
+  getAppBaseUrl() === "https://userill.com",
+  "unset APP_URL with prod API does not return localhost",
+);
+if (prevApp !== undefined) process.env.RILL_APP_URL = prevApp;
+else delete process.env.RILL_APP_URL;
+if (prevApp2 !== undefined) process.env.APP_URL = prevApp2;
+else delete process.env.APP_URL;
+if (prevApp3 !== undefined) process.env.NEXT_PUBLIC_APP_URL = prevApp3;
+else delete process.env.NEXT_PUBLIC_APP_URL;
+if (prevApi !== undefined) process.env.RILL_API_URL = prevApi;
+else delete process.env.RILL_API_URL;
 
 assert(parseBearerCsvTokens("a,b").length === 2, "CSV parse");
 assert(parseBearerCsvTokens("  tok  ")[0] === "tok", "trim");

@@ -24,13 +24,24 @@ export function getApiBaseUrl(): string {
   ).replace(/\/$/, "");
 }
 
+/** Infer the public site origin from the API origin when APP_URL is unset. */
+export function defaultAppBaseUrl(apiBaseUrl: string): string {
+  try {
+    const host = new URL(apiBaseUrl).hostname.toLowerCase();
+    if (host === "api.userill.com") return "https://userill.com";
+  } catch {
+    /* fall through */
+  }
+  return "http://localhost:3000";
+}
+
 export function getAppBaseUrl(): string {
-  return (
+  const explicit =
     process.env.RILL_APP_URL?.trim() ||
     process.env.APP_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+  return defaultAppBaseUrl(getApiBaseUrl());
 }
 
 export function getOptionalVwKey(): string | null {
