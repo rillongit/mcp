@@ -44,7 +44,7 @@ Verify the raw body; do not re-serialize JSON. Reject timestamps outside 300s.
 Envelope: { id, type, created_at, data }.
 Node helper: verifyWebhookSignature from @userill/accept.
 Deliveries retry with backoff; use POST …/test and …/deliveries/:id/retry.
-Events include payment.succeeded, transfer.received, funding.paid, withdrawal.paid, vw.revoked, resource.updated, subscription.created, subscription.renewed, subscription.lapsed, subscription.cancelled, …
+Events include payment.succeeded, transfer.received, funding.paid, funding.refunded, withdrawal.paid, vw.revoked, resource.updated, subscription.created, subscription.renewed, subscription.lapsed, subscription.cancelled, …
 `,
   errors: `# Errors
 
