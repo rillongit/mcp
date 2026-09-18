@@ -343,6 +343,50 @@ async function mcpAuthMiddleware(
   });
 }
 
+function missingSessionBody() {
+  return {
+    jsonrpc: "2.0" as const,
+    error: {
+      code: -32000,
+      message: "Bad Request: No valid session ID provided",
+      data: {
+        code: "missing_session",
+        message: "Bad Request: No valid session ID provided",
+      },
+    },
+    id: null,
+  };
+}
+
+const SSE_KEEPALIVE_MS = 25_000;
+
+function startSseKeepalive(
+  res: Response,
+  registry: McpSessionRegistry,
+  sessionId: string,
+): void {
+  registry.markStreamOpen(sessionId);
+  const ping = setInterval(() => {
+    if (res.writableEnded) {
+      clearInterval(ping);
+      return;
+    }
+    try {
+      res.write(": ping\n\n");
+      registry.touch(sessionId);
+    } catch {
+      clearInterval(ping);
+    }
+  }, SSE_KEEPALIVE_MS);
+  ping.unref?.();
+  const stop = () => {
+    clearInterval(ping);
+    registry.markStreamClosed(sessionId);
+  };
+  res.on("close", stop);
+  res.on("finish", stop);
+}
+
 export function createHttpApplication(): Express {
   const registry = new McpSessionRegistry(mcpMaxSessions(), mcpSessionTtlMs());
   registry.startPeriodicPrune();
@@ -461,6 +505,9 @@ export function createHttpApplication(): Express {
         const session = registry.get(sessionId)!;
         registry.touch(sessionId);
         adoptSessionKeysFromHeaders(session.keys, req);
+        if (req.method === "GET") {
+          startSseKeepalive(res, registry, sessionId);
+        }
         await session.transport.handleRequest(
           req as IncomingMessage,
           res as ServerResponse,
@@ -469,7 +516,12 @@ export function createHttpApplication(): Express {
         return;
       }
 
-      if (!sessionId && isInitializeRequest(req.body)) {
+      if (sessionId) {
+        res.status(404).json(missingSessionBody());
+        return;
+      }
+
+      if (isInitializeRequest(req.body)) {
         if (!registry.canAcceptNewSession()) {
           res.status(503).json({
             jsonrpc: "2.0",
@@ -530,18 +582,7 @@ export function createHttpApplication(): Express {
         return;
       }
 
-      res.status(400).json({
-        jsonrpc: "2.0",
-        error: {
-          code: -32000,
-          message: "Bad Request: No valid session ID provided",
-          data: {
-            code: "missing_session",
-            message: "Bad Request: No valid session ID provided",
-          },
-        },
-        id: null,
-      });
+      res.status(400).json(missingSessionBody());
     } catch (error) {
       if (!res.headersSent) {
         res.status(500).json({

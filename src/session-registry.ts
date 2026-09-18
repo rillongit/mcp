@@ -5,6 +5,7 @@ type SessionRegistryEntry = {
   transport: StreamableHTTPServerTransport;
   keys: SessionKeys;
   lastActivity: number;
+  openStreams: number;
 };
 
 export class McpSessionRegistry {
@@ -28,6 +29,7 @@ export class McpSessionRegistry {
 
   prune(now = Date.now()): void {
     for (const [id, entry] of this.sessions) {
+      if (entry.openStreams > 0) continue;
       if (now - entry.lastActivity > this.ttlMs) {
         void entry.transport.close();
         this.sessions.delete(id);
@@ -52,6 +54,7 @@ export class McpSessionRegistry {
       transport,
       keys,
       lastActivity: Date.now(),
+      openStreams: 0,
     });
   }
 
@@ -62,6 +65,17 @@ export class McpSessionRegistry {
   touch(id: string, now = Date.now()): void {
     const entry = this.sessions.get(id);
     if (entry) entry.lastActivity = now;
+  }
+
+  markStreamOpen(id: string): void {
+    const entry = this.sessions.get(id);
+    if (entry) entry.openStreams += 1;
+  }
+
+  markStreamClosed(id: string): void {
+    const entry = this.sessions.get(id);
+    if (!entry) return;
+    entry.openStreams = Math.max(0, entry.openStreams - 1);
   }
 
   canAcceptNewSession(now = Date.now()): boolean {

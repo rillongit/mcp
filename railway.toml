@@ -1,6 +1,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "apps/mcp/Dockerfile"
+watchPatterns = ["apps/mcp/**", "packages/shared/**"]
 
 [deploy]
 healthcheckPath = "/health"

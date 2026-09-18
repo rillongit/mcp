@@ -49,6 +49,21 @@ try {
   if (!ok) {
     throw new Error(`smoke-http failed\n${output}`);
   }
+
+  const stale = await fetch(`http://127.0.0.1:${port}/mcp`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      "mcp-session-id": "stale-session-for-smoke",
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+  });
+  if (stale.status !== 404) {
+    throw new Error(
+      `smoke-http: stale session expected 404, got ${stale.status}`,
+    );
+  }
   console.log("smoke-http: ok");
 } finally {
   child.kill("SIGTERM");
