@@ -888,7 +888,7 @@ export function createRillMcpServer(
   if (allow("rill_sellers")) {
     server.tool(
       "rill_sellers",
-      "Accept sellers. action=list: owner inventory. action=create: mint rill_sk_* (shown once). action=me: current seller. action=update: website/description. action=rotate: new key (shown once). List before create after Authenticate.",
+      "Accept sellers. action=list: owner inventory. action=create: mint rill_sk_* (shown once). action=me: current seller. action=update: website/description/payout_wallet_address. action=rotate: new key (shown once). List before create after Authenticate.",
       {
         action: z
           .enum(["create", "list", "me", "update", "rotate"])
@@ -906,6 +906,12 @@ export function createRillMcpServer(
           .string()
           .optional()
           .describe("create/update: short listing copy"),
+        payout_wallet_address: z
+          .string()
+          .optional()
+          .describe(
+            "create/update: EVM 0x address so x402/MPP USDC settles to you (Stripe Connect stays optional)",
+          ),
         seller_id: z
           .string()
           .optional()
@@ -938,6 +944,7 @@ export function createRillMcpServer(
               body: {
                 website_url: args.website_url,
                 description: args.description,
+                payout_wallet_address: args.payout_wallet_address,
               },
             }),
           );
@@ -1348,7 +1355,7 @@ export function createRillMcpServer(
   if (allow("rill_webhooks")) {
     server.tool(
       "rill_webhooks",
-      "Owner webhooks. action=create: register HTTPS URL for payment.succeeded. action=list: endpoints. action=test: send a test event. action=delete: remove endpoint. Pass environment=test for Test mode.",
+      "Owner webhooks. action=create: register HTTPS URL for payment.succeeded. action=list: endpoints. action=test: send a signed payment.succeeded sample with receipt_id (delivers immediately). action=delete: remove endpoint. Pass environment=test for Test mode.",
       {
         action: z
           .enum(["create", "list", "test", "delete"])

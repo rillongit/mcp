@@ -80,8 +80,9 @@ Guest HTTP (`/mcp/guest`): search, capabilities, resolve, list_directory, discov
 
 1. `rill_sellers` `action=list` (or `action=create`) → `rill_create_pay_link` → share `gate_url` (agents pay this; `pay_page_url` is the same SKU for humans)
 2. `rill_enable_payments`, enables MPP + x402 (optional `stripe_profile_id`; defaults adopt platform profile for the seller environment)
-3. `rill_webhooks` `action=create` for `payment.succeeded`, unlocks your product
-4. Test with a funded VW via `rill_pay_url` against `gate_url`
+3. `rill_webhooks` `action=create` for `payment.succeeded`, unlocks your product (pass `environment=test` for Test; `action=test` sends a signed `payment.succeeded` sample)
+4. In Test, `rill_pay_url` against `gate_url` with a Test wallet (sample balance). In Live, fund first.
+5. To get paid without Stripe: `rill_sellers` `action=update` with `payout_wallet_address`. Otherwise `rill_connect`.
 
 ## Connect recipe
 
@@ -92,7 +93,7 @@ Guest HTTP (`/mcp/guest`): search, capabilities, resolve, list_directory, discov
 5. If stuck: `rill_connect` `action=login`
 6. `rill_withdraw` (or owner `rill_recycle`)
 
-Stripe model: platform Checkout on-ramp + Express Transfer off-ramp (separate charges and transfers).
+Stripe model: platform Checkout on-ramp + Express Transfer off-ramp (separate charges and transfers). Optional `payout_wallet_address` sends x402/MPP USDC to the seller.
 
 ## Examples
 
